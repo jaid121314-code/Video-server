@@ -92,17 +92,19 @@ app.post("/generate-video", upload.array("images", 50), async (req, res) => {
     await new Promise((resolve, reject) => {
       ffmpeg()
         .input(listPath)
-        .inputOptions(["-f concat", "-safe 0"])
+        .inputOptions(["-f", "concat", "-safe", "0"])
+        .videoFilters(
+          "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black,format=yuv420p"
+        )
         .outputOptions([
-          "-vsync vfr",
-          "-pix_fmt yuv420p",
-          "-vf",
-          "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black,format=yuv420p",
-          "-r 30",
-          "-c:v libx264",
-          "-preset veryfast",
-          "-movflags +faststart",
+          "-fps_mode", "vfr",
+          "-pix_fmt", "yuv420p",
+          "-r", "30",
+          "-c:v", "libx264",
+          "-preset", "veryfast",
+          "-movflags", "+faststart",
         ])
+        .on("start", (cmd) => console.log("ffmpeg cmd:", cmd))
         .on("end", resolve)
         .on("error", reject)
         .save(outPath);
